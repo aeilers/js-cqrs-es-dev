@@ -1,4 +1,4 @@
-# js-cqrs-es-dev
+# hive-io-dev
 This project contains the development stack defined in [docker-compose](./docker-compose.yml). It also contains a production stack defined in [docker-compose-prod](./docker-compose-prod.yml) for testing the docker images out on Docker Hub.
 
 To use, clone this project along with all of the other [components](https://gist.github.com/aeilers/30aa0047187e5a5d573a478abc581903#hive-stack-components), build, and run. I have also included a copy of the [Postman calls](./Hive Stack.postman_collection.json) to test each endpoint for accuracy. Change each as you see fit.
