@@ -1,212 +1,166 @@
 version: '3'
 services:
   # proxy for layer 7 routing
-  js-cqrs-es-proxy:
+  hive-io-proxy:
     build:
-      context: ../js-cqrs-es-proxy
+      context: ../hive-io-proxy
       args:
         PROXY_ENV: "development"
-    image: js-cqrs-es-proxy
+    image: hive-io-proxy
     depends_on:
-      - docker-nodejs-producer-starter
-      - docker-nodejs-consumer-starter
-      - docker-nodejs-stream-processor-starter
-      - docker-nodejs-consumer-starter-db-viewer
-      - redis-commander
+      - hive-consumer-js
+      - hive-consumer-js-db-viewer
+      - hive-producer-js
+      - hive-stream-processor-js
     expose:
       - "80"
     ports:
       - "80:80"
     volumes:
-      - ../js-cqrs-es-proxy/conf/development:/usr/local/etc/haproxy:rw
+      - ../hive-io-proxy/conf/development:/usr/local/etc/haproxy:rw
     networks:
-      - js-cqrs-es
-    restart: always
+      - hive-io
+    restart: on-failure
 
   # producers
-  docker-nodejs-producer-starter:
+  hive-producer-js:
     build:
-      context: ../docker-nodejs-producer-starter
+      context: ../hive-producer-js
       args:
         APP_SOURCE: "."
         NODE_ENV: "development"
-    image: docker-nodejs-producer-starter
+    image: hive-producer-js
     environment:
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "producer-client"
     depends_on:
-      - docker-kafka
-    command: npm run start:dev
+      - hive-io-kafka
+    command: npm run dev
     expose:
       - "3000"
+    ports:
+      - "3000:3000"
     volumes:
-      - ../docker-nodejs-producer-starter:/opt/app:rw
+      - ../hive-producer-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../js-cqrs-es-domain-module:/opt/app/node_modules/js-cqrs-es-domain-module:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es-domain-module/node_modules/js-cqrs-es:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es:rw
+      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
-      - js-cqrs-es
+      - hive-io
 
   # stream processors
-  docker-nodejs-stream-processor-starter:
+  hive-stream-processor-js:
     build:
-      context: ../docker-nodejs-stream-processor-starter
+      context: ../hive-stream-processor-js
       args:
         APP_SOURCE: "."
         NODE_ENV: "development"
-    image: docker-nodejs-stream-processor-starter
+    image: hive-stream-processor-js
     environment:
-      CACHE_URL: "redis://js-cqrs-es-cache:6379"
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      CACHE_URL: "redis://hive-stream-processor-js-cache:6379"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "stream-processor-client"
     depends_on:
-      - js-cqrs-es-cache
-      - docker-kafka
-    command: npm run start:dev
+      - hive-stream-processor-js-cache
+      - hive-io-kafka
+    command: npm run dev
     expose:
       - "3000"
+    ports:
+      - "3001:3000"
     volumes:
-      - ../docker-nodejs-stream-processor-starter:/opt/app:rw
+      - ../hive-stream-processor-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../js-cqrs-es-domain-module:/opt/app/node_modules/js-cqrs-es-domain-module:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es-domain-module/node_modules/js-cqrs-es:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es:rw
+      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
-      - js-cqrs-es
-  stream-consumer:
-    build:
-      context: ../docker-nodejs-stream-processor-starter
-      args:
-        APP_SOURCE: "."
-        NODE_ENV: "development"
-    image: stream-consumer
-    environment:
-      PROCESSOR_TYPE: "consumer"
-      CACHE_URL: "redis://js-test-cache:6379"
-      EVENT_STORE_URL: "docker-kafka-db:2181"
-      EVENT_STORE_ID: "stream-consumer-client"
-      EVENT_STORE_TYPE: 3
-      EVENT_STORE_OFFSET: "earliest"
-    depends_on:
-      - js-cqrs-es-cache
-      - docker-kafka
-    command: npm run start:dev
-    expose:
-      - "3000"
-    volumes:
-      - ../docker-nodejs-stream-processor-starter:/opt/app:rw
-      - /opt/app/node_modules
-      - ../js-cqrs-es-domain-module:/opt/app/node_modules/js-cqrs-es-domain-module:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es-domain-module/node_modules/js-cqrs-es:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es:rw
-    networks:
-      - js-cqrs-es
-
-  # stream processor cache
-  js-cqrs-es-cache:
-    image: redis:3.2.8-alpine
+      - hive-io
+  hive-stream-processor-js-cache:
+    image: redis:4.0.8-alpine
     expose:
       - "6379"
     networks:
-      - js-cqrs-es
-    restart: always
-  js-test-cache:
-    image: redis:3.2.8-alpine
-    expose:
-      - "6379"
-    networks:
-      - js-cqrs-es
-    restart: always
-  redis-commander:
-    image: tenstartups/redis-commander
-    depends_on:
-      - js-test-cache
-    command: --redis-host js-test-cache
-    links:
-      - js-test-cache:js-test-cache
-    expose:
-      - "8081"
-    networks:
-      - js-cqrs-es
-    restart: always
+      - hive-io
+    restart: on-failure
 
   # log stream containers
-  docker-kafka:
+  hive-io-kafka:
     build:
-      context: ../docker-kafka
+      context: ../hive-io-kafka
       args:
-        KAFKA_VERSION: "0.10.2.0"
+        KAFKA_VERSION: "1.0.0"
         SCALA_VERSION: "2.12"
-    image: docker-kafka
+    image: hive-io-kafka
     depends_on:
-      - docker-kafka-db
+      - hive-io-kafka-db
     environment:
       KAFKA_CREATE_TOPICS: "content:1:1,error:1:1,view:1:1"
       KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
     expose:
       - "9092"
     volumes:
-      - ../docker-kafka/conf:/usr/local/kafka/config:rw
+      - ../hive-io-kafka/conf:/usr/local/kafka/config:rw
     networks:
-      - js-cqrs-es
-    restart: always
-  docker-kafka-db:
-    image: zookeeper:3.4.10
+      - hive-io
+    restart: on-failure
+  hive-io-kafka-db:
+    image: zookeeper:3.4.11
     expose:
       - "2181"
     networks:
-      - js-cqrs-es
-    restart: always
+      - hive-io
+    restart: on-failure
 
   # consumers
-  docker-nodejs-consumer-starter:
+  hive-consumer-js:
     build:
-      context: ../docker-nodejs-consumer-starter
+      context: ../hive-consumer-js
       args:
         APP_SOURCE: "."
         NODE_ENV: "development"
-    image: docker-nodejs-consumer-starter
+    image: hive-consumer-js
     environment:
-      MONGO_URL: "mongodb://docker-nodejs-consumer-starter-db:27017/post"
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "consumer-client"
       EVENT_STORE_OFFSET: "earliest"
     depends_on:
-      - docker-nodejs-consumer-starter-db
-      - docker-kafka
-    command: npm run start:dev
+      - hive-consumer-js-db
+      - hive-io-kafka
+    command: npm run dev
     expose:
       - "3000"
+    ports:
+      - "3002:3000"
     volumes:
-      - ../docker-nodejs-consumer-starter:/opt/app:rw
+      - ../hive-consumer-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../js-cqrs-es-domain-module:/opt/app/node_modules/js-cqrs-es-domain-module:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es-domain-module/node_modules/js-cqrs-es:rw
-      - ../js-cqrs-es:/opt/app/node_modules/js-cqrs-es:rw
+      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
-      - js-cqrs-es
-  docker-nodejs-consumer-starter-db:
-    image: mongo:3.4.4
+      - hive-io
+  hive-consumer-js-db:
+    image: mongo:3.6.2
     expose:
       - "27017"
     networks:
-      - js-cqrs-es
-    restart: always
-  docker-nodejs-consumer-starter-db-viewer:
-    image: mongo-express:0.38.0
+      - hive-io
+    restart: on-failure
+  hive-consumer-js-db-viewer:
+    image: mongo-express:0.44.0
     environment:
-      ME_CONFIG_MONGODB_SERVER: "docker-nodejs-consumer-starter-db"
+      ME_CONFIG_MONGODB_SERVER: "hive-consumer-js-db"
       ME_CONFIG_SITE_BASEURL: "/mongo/"
     depends_on:
-      - docker-nodejs-consumer-starter-db
+      - hive-consumer-js-db
     expose:
       - "8081"
+    ports:
+      - "8081:8081"
     networks:
-      - js-cqrs-es
-    restart: always
+      - hive-io
+    restart: on-failure
 
 # networking specifics
 networks:
-  js-cqrs-es:
+  hive-io:
     driver: bridge
