@@ -44,6 +44,7 @@ services:
       - ../hive-producer-js:/opt/app:rw
       - /opt/app/node_modules
       - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
@@ -72,6 +73,7 @@ services:
       - ../hive-stream-processor-js:/opt/app:rw
       - /opt/app/node_modules
       - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
@@ -135,6 +137,7 @@ services:
       - ../hive-consumer-js:/opt/app:rw
       - /opt/app/node_modules
       - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io

@@ -1,107 +1,99 @@
 version: '3'
 services:
   # proxy for layer 7 routing
-  js-cqrs-es-proxy:
-    build:
-      context: ../js-cqrs-es-proxy
-      args:
-        PROXY_ENV: "development"
-    image: js-cqrs-es-proxy
+  hive-io-proxy:
+    image: fnalabs/hive-io-proxy:latest
     depends_on:
-      - docker-nodejs-producer-starter
-      - docker-nodejs-consumer-starter
-      - docker-nodejs-stream-processor-starter
+      - hive-producer-js
+      - hive-consumer-js
+      - hive-stream-processor-js
     expose:
       - "80"
     ports:
       - "80:80"
-    volumes:
-      - ../js-cqrs-es-proxy/conf/development:/usr/local/etc/haproxy:rw
     networks:
-      - js-cqrs-es
+      - hive-io
     restart: always
 
   # producers
-  docker-nodejs-producer-starter:
-    image: aeilers/docker-nodejs-producer:latest
+  hive-producer-js:
+    image: fnalabs/hive-producer-js:latest
     environment:
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "producer-client"
     depends_on:
-      - docker-kafka
+      - hive-io-kafka
     expose:
       - "3000"
     networks:
-      - js-cqrs-es
+      - hive-io
 
   # stream processors
-  docker-nodejs-stream-processor-starter:
-    image: aeilers/docker-nodejs-stream-processor:latest
+  hive-stream-processor-js:
+    image: fnalabs/hive-stream-processor-js:latest
     environment:
-      CACHE_URL: "redis://js-cqrs-es-cache:6379"
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      CACHE_URL: "redis://hive-stream-processor-js-cache:6379"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "stream-processor-client"
     depends_on:
-      - js-cqrs-es-cache
-      - docker-kafka
+      - hive-stream-processor-js-cache
+      - hive-io-kafka
     expose:
       - "3000"
     networks:
-      - js-cqrs-es
-
-  # stream processor cache
-  js-cqrs-es-cache:
-    image: redis:3.2.8-alpine
+      - hive-io
+  hive-stream-processor-js-cache:
+    image: redis:4.0.8-alpine
     expose:
       - "6379"
     networks:
-      - js-cqrs-es
+      - hive-io
     restart: always
 
   # log stream containers
-  docker-kafka:
-    image: aeilers/docker-kafka:latest
+  hive-io-kafka:
+    image: fnalabs/hive-io-kafka:latest
     depends_on:
-      - docker-kafka-db
+      - hive-io-kafka-db
     environment:
       KAFKA_CREATE_TOPICS: "content:1:1,error:1:1,view:1:1"
       KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
     expose:
       - "9092"
     networks:
-      - js-cqrs-es
+      - hive-io
     restart: always
-  docker-kafka-db:
-    image: zookeeper:3.4.10
+  hive-io-kafka-db:
+    image: zookeeper:3.4.11
     expose:
       - "2181"
     networks:
-      - js-cqrs-es
+      - hive-io
     restart: always
 
   # consumers
-  docker-nodejs-consumer-starter:
-    image: aeilers/docker-nodejs-consumer:latest
+  hive-consumer-js:
+    image: fnalabs/hive-consumer-js:latest
     environment:
-      MONGO_URL: "mongodb://docker-nodejs-consumer-starter-db:27017/post"
-      EVENT_STORE_URL: "docker-kafka-db:2181"
+      MONGO_URL: "mongodb://hive-consumer-js-db:27017/post"
+      EVENT_STORE_URL: "hive-io-kafka-db:2181"
       EVENT_STORE_ID: "consumer-client"
     depends_on:
-      - docker-nodejs-consumer-starter-db
-      - docker-kafka
+      - hive-consumer-js-db
+      - hive-io-kafka
     expose:
       - "3000"
     networks:
-      - js-cqrs-es
-  docker-nodejs-consumer-starter-db:
-    image: mongo:3.4.4
+      - hive-io
+  hive-consumer-js-db:
+    image: mongo:3.6.2
     expose:
       - "27017"
     networks:
-      - js-cqrs-es
+      - hive-io
     restart: always
 
 # networking specifics
 networks:
-  js-cqrs-es:
+  hive-io:
     driver: bridge
