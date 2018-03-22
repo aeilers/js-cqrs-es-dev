@@ -1,0 +1,53 @@
+version: '3'
+services:
+  hive-rest-js:
+    build:
+      context: ../hive-rest-js
+      args:
+        APP_MODULE: "hive-io-rest-example"
+        APP_SOURCE: "."
+        NODE_ENV: "development"
+    image: hive-rest-js
+    environment:
+      MONGO_URL: "mongodb://hive-rest-js-db:27017/post"
+    depends_on:
+      - hive-rest-js-db
+    command: npm run dev
+    expose:
+      - "3000"
+    ports:
+      - "80:3000"
+    volumes:
+      - ../hive-rest-js:/opt/app:rw
+      - /opt/app/node_modules
+      - ../hive-js-rest-example:/opt/app/node_modules/hive-io-rest-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io-rest-example/node_modules/hive-io:rw
+      - ../hive-js:/opt/app/node_modules/hive-io:rw
+    networks:
+      - hive-io
+  hive-rest-js-db:
+    image: mongo:3.6.2
+    expose:
+      - "27017"
+    networks:
+      - hive-io
+    restart: on-failure
+  hive-rest-js-db-viewer:
+    image: mongo-express:0.44.0
+    environment:
+      ME_CONFIG_MONGODB_SERVER: "hive-rest-js-db"
+      ME_CONFIG_SITE_BASEURL: "/mongo/"
+    depends_on:
+      - hive-rest-js-db
+    expose:
+      - "8081"
+    ports:
+      - "8081:8081"
+    networks:
+      - hive-io
+    restart: on-failure
+
+# networking specifics
+networks:
+  hive-io:
+    driver: bridge

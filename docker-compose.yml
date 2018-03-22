@@ -27,6 +27,7 @@ services:
     build:
       context: ../hive-producer-js
       args:
+        APP_MODULE: "hive-io-domain-example"
         APP_SOURCE: "."
         NODE_ENV: "development"
     image: hive-producer-js
@@ -54,6 +55,7 @@ services:
     build:
       context: ../hive-stream-processor-js
       args:
+        APP_MODULE: "hive-io-domain-example"
         APP_SOURCE: "."
         NODE_ENV: "development"
     image: hive-stream-processor-js
@@ -118,6 +120,7 @@ services:
     build:
       context: ../hive-consumer-js
       args:
+        APP_MODULE: "hive-io-domain-example"
         APP_SOURCE: "."
         NODE_ENV: "development"
     image: hive-consumer-js
