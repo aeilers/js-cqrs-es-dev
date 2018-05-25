@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 services:
   # proxy for layer 7 routing
   hive-io-proxy:
@@ -9,13 +9,11 @@ services:
     image: hive-io-proxy
     depends_on:
       - hive-consumer-js
-      - hive-consumer-js-db-viewer
+      - mongo-express
       - hive-producer-js
       - hive-stream-processor-js
-    expose:
-      - "80"
     ports:
-      - "80:80"
+      - 80:80
     volumes:
       - ../hive-io-proxy/conf/development:/usr/local/etc/haproxy:rw
     networks:
@@ -33,15 +31,13 @@ services:
     image: hive-producer-js
     environment:
       CLUSTER_SIZE: 1
-      EVENT_STORE_URL: "hive-io-kafka:9092"
+      EVENT_STORE_URL: "kafka:9092"
       EVENT_STORE_ID: "producer-client"
     depends_on:
-      - hive-io-kafka
+      - kafka
     command: npm run dev
-    expose:
-      - "3000"
     ports:
-      - "3000:3000"
+      - 3000:3000
     volumes:
       - ../hive-producer-js:/opt/app:rw
       - /opt/app/node_modules
@@ -62,17 +58,15 @@ services:
     image: hive-stream-processor-js
     environment:
       CLUSTER_SIZE: 1
-      CACHE_URL: "redis://hive-stream-processor-js-cache:6379"
-      EVENT_STORE_URL: "hive-io-kafka:9092"
+      CACHE_URL: "redis://redis:6379"
+      EVENT_STORE_URL: "kafka:9092"
       EVENT_STORE_ID: "stream-processor-client"
     depends_on:
-      - hive-stream-processor-js-cache
-      - hive-io-kafka
+      - redis
+      - kafka
     command: npm run dev
-    expose:
-      - "3000"
     ports:
-      - "3001:3000"
+      - 3001:3000
     volumes:
       - ../hive-stream-processor-js:/opt/app:rw
       - /opt/app/node_modules
@@ -81,38 +75,30 @@ services:
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
-  hive-stream-processor-js-cache:
-    image: redis:4.0.8-alpine
-    expose:
-      - "6379"
+  redis:
+    image: redis:4.0.9-alpine
     networks:
       - hive-io
     restart: on-failure
 
   # log stream containers
-  hive-io-kafka:
-    build:
-      context: ../hive-io-kafka
-      args:
-        KAFKA_VERSION: "1.0.0"
-        SCALA_VERSION: "2.12"
-    image: hive-io-kafka
+  kafka:
+    image: confluentinc/cp-kafka:4.1.1-1
     depends_on:
-      - hive-io-kafka-db
+      - zookeeper
     environment:
-      KAFKA_CREATE_TOPICS: "content:1:1,error:1:1,view:1:1"
-      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
-    expose:
-      - "9092"
-    volumes:
-      - ../hive-io-kafka/conf:/usr/local/kafka/config:rw
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - 9092:9092
     networks:
       - hive-io
     restart: on-failure
-  hive-io-kafka-db:
-    image: zookeeper:3.4.11
-    expose:
-      - "2181"
+  zookeeper:
+    image: confluentinc/cp-zookeeper:4.1.1-1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
     networks:
       - hive-io
     restart: on-failure
@@ -128,18 +114,16 @@ services:
     image: hive-consumer-js
     environment:
       CLUSTER_SIZE: 1
-      MONGO_URL: "mongodb://hive-consumer-js-db:27017/post"
-      EVENT_STORE_URL: "hive-io-kafka:9092"
+      MONGO_URL: "mongodb://mongo:27017/post"
+      EVENT_STORE_URL: "kafka:9092"
       EVENT_STORE_ID: "consumer-client"
       EVENT_STORE_OFFSET: "earliest"
     depends_on:
-      - hive-consumer-js-db
-      - hive-io-kafka
+      - mongo
+      - kafka
     command: npm run dev
-    expose:
-      - "3000"
     ports:
-      - "3002:3000"
+      - 3002:3000
     volumes:
       - ../hive-consumer-js:/opt/app:rw
       - /opt/app/node_modules
@@ -148,24 +132,20 @@ services:
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
-  hive-consumer-js-db:
-    image: mongo:3.6.2
-    expose:
-      - "27017"
+  mongo:
+    image: mongo:3.6.4
     networks:
       - hive-io
     restart: on-failure
-  hive-consumer-js-db-viewer:
-    image: mongo-express:0.44.0
+  mongo-express:
+    image: mongo-express:0.45.0
     environment:
-      ME_CONFIG_MONGODB_SERVER: "hive-consumer-js-db"
+      ME_CONFIG_MONGODB_SERVER: "mongo"
       ME_CONFIG_SITE_BASEURL: "/mongo/"
     depends_on:
-      - hive-consumer-js-db
-    expose:
-      - "8081"
+      - mongo
     ports:
-      - "8081:8081"
+      - 8081:8081
     networks:
       - hive-io
     restart: on-failure

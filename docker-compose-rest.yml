@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 services:
   hive-rest-js:
     build:
@@ -10,14 +10,12 @@ services:
     image: hive-rest-js
     environment:
       CLUSTER_SIZE: 1
-      MONGO_URL: "mongodb://hive-rest-js-db:27017/post"
+      MONGO_URL: "mongodb://mongo:27017/post"
     depends_on:
-      - hive-rest-js-db
+      - mongo
     command: npm run dev
-    expose:
-      - "3000"
     ports:
-      - "80:3000"
+      - 80:3000
     volumes:
       - ../hive-rest-js:/opt/app:rw
       - /opt/app/node_modules
@@ -26,24 +24,20 @@ services:
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
-  hive-rest-js-db:
-    image: mongo:3.6.2
-    expose:
-      - "27017"
+  mongo:
+    image: mongo:3.6.4
     networks:
       - hive-io
     restart: on-failure
-  hive-rest-js-db-viewer:
+  mongo-viewer:
     image: mongo-express:0.44.0
     environment:
-      ME_CONFIG_MONGODB_SERVER: "hive-rest-js-db"
+      ME_CONFIG_MONGODB_SERVER: "mongo"
       ME_CONFIG_SITE_BASEURL: "/mongo/"
     depends_on:
-      - hive-rest-js-db
-    expose:
-      - "8081"
+      - mongo
     ports:
-      - "8081:8081"
+      - 8081:8081
     networks:
       - hive-io
     restart: on-failure
