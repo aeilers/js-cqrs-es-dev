@@ -4,15 +4,20 @@ services:
     build:
       context: ../hive-rest-js
       args:
-        APP_MODULE: "hive-io-rest-example"
-        APP_SOURCE: "."
-        NODE_ENV: "development"
+        APP_MODULE: hive-io-rest-example
+        APP_SOURCE: .
+        NODE_ENV: development
     image: hive-rest-js
     environment:
       CLUSTER_SIZE: 1
       MONGO_URL: "mongodb://mongo:27017/post"
+      FLUENTD_HOST: fluentd
+      FLUENTD_PORT: 24224
+      FLUENTD_TIMEOUT: 3.0
+      FLUENTD_RECONNECT: 600000
     depends_on:
       - mongo
+      - fluentd
     command: npm run dev
     ports:
       - 80:3000
@@ -24,15 +29,20 @@ services:
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
+  fluentd:
+    image: fluent/fluentd:v1.2.1
+    networks:
+      - hive-io
+    restart: on-failure
   mongo:
-    image: mongo:3.6.4
+    image: mongo:3.6.5
     networks:
       - hive-io
     restart: on-failure
   mongo-viewer:
-    image: mongo-express:0.44.0
+    image: mongo-express:0.45.0
     environment:
-      ME_CONFIG_MONGODB_SERVER: "mongo"
+      ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_SITE_BASEURL: "/mongo/"
     depends_on:
       - mongo
