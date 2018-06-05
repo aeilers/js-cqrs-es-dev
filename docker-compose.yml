@@ -5,17 +5,21 @@ services:
     build:
       context: ../hive-io-proxy
       args:
-        PROXY_ENV: "development"
+        PROXY_ENV: development
     image: hive-io-proxy
     depends_on:
-      - hive-consumer-js
-      - mongo-express
       - hive-producer-js
+      - hive-rest-js
       - hive-stream-processor-js
     ports:
       - 80:80
     volumes:
       - ../hive-io-proxy/conf/development:/usr/local/etc/haproxy:rw
+    networks:
+      - hive-io
+    restart: on-failure
+  fluentd:
+    image: fluent/fluentd:v1.2.1
     networks:
       - hive-io
     restart: on-failure
@@ -25,16 +29,21 @@ services:
     build:
       context: ../hive-producer-js
       args:
-        APP_MODULE: "hive-io-domain-example"
-        APP_SOURCE: "."
-        NODE_ENV: "development"
+        APP_MODULE: hive-io-domain-example
+        APP_SOURCE: .
+        NODE_ENV: development
     image: hive-producer-js
     environment:
       CLUSTER_SIZE: 1
       EVENT_STORE_URL: "kafka:9092"
       EVENT_STORE_ID: "producer-client"
+      FLUENTD_HOST: fluentd
+      FLUENTD_PORT: 24224
+      FLUENTD_TIMEOUT: 3.0
+      FLUENTD_RECONNECT: 600000
     depends_on:
       - kafka
+      - fluentd
     command: npm run dev
     ports:
       - 3000:3000
@@ -52,18 +61,23 @@ services:
     build:
       context: ../hive-stream-processor-js
       args:
-        APP_MODULE: "hive-io-domain-example"
-        APP_SOURCE: "."
-        NODE_ENV: "development"
+        APP_MODULE: hive-io-domain-example
+        APP_SOURCE: .
+        NODE_ENV: development
     image: hive-stream-processor-js
     environment:
       CLUSTER_SIZE: 1
       CACHE_URL: "redis://redis:6379"
       EVENT_STORE_URL: "kafka:9092"
-      EVENT_STORE_ID: "stream-processor-client"
+      EVENT_STORE_ID: stream-processor-client
+      FLUENTD_HOST: fluentd
+      FLUENTD_PORT: 24224
+      FLUENTD_TIMEOUT: 3.0
+      FLUENTD_RECONNECT: 600000
     depends_on:
       - redis
       - kafka
+      - fluentd
     command: npm run dev
     ports:
       - 3001:3000
@@ -83,7 +97,7 @@ services:
 
   # log stream containers
   kafka:
-    image: confluentinc/cp-kafka:4.1.1-1
+    image: confluentinc/cp-kafka:4.1.1-2
     depends_on:
       - zookeeper
     environment:
@@ -96,7 +110,7 @@ services:
       - hive-io
     restart: on-failure
   zookeeper:
-    image: confluentinc/cp-zookeeper:4.1.1-1
+    image: confluentinc/cp-zookeeper:4.1.1-2
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
     networks:
@@ -108,19 +122,24 @@ services:
     build:
       context: ../hive-consumer-js
       args:
-        APP_MODULE: "hive-io-domain-example"
-        APP_SOURCE: "."
-        NODE_ENV: "development"
+        APP_MODULE: hive-io-domain-example
+        APP_SOURCE: .
+        NODE_ENV: development
     image: hive-consumer-js
     environment:
       CLUSTER_SIZE: 1
       MONGO_URL: "mongodb://mongo:27017/post"
       EVENT_STORE_URL: "kafka:9092"
-      EVENT_STORE_ID: "consumer-client"
-      EVENT_STORE_OFFSET: "earliest"
+      EVENT_STORE_ID: consumer-client
+      EVENT_STORE_OFFSET: earliest
+      FLUENTD_HOST: fluentd
+      FLUENTD_PORT: 24224
+      FLUENTD_TIMEOUT: 3.0
+      FLUENTD_RECONNECT: 600000
     depends_on:
       - mongo
       - kafka
+      - fluentd
     command: npm run dev
     ports:
       - 3002:3000
@@ -133,14 +152,14 @@ services:
     networks:
       - hive-io
   mongo:
-    image: mongo:3.6.4
+    image: mongo:3.6.5
     networks:
       - hive-io
     restart: on-failure
   mongo-express:
     image: mongo-express:0.45.0
     environment:
-      ME_CONFIG_MONGODB_SERVER: "mongo"
+      ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_SITE_BASEURL: "/mongo/"
     depends_on:
       - mongo
@@ -149,6 +168,39 @@ services:
     networks:
       - hive-io
     restart: on-failure
+
+  # rest services
+  hive-rest-js:
+    build:
+      context: ../hive-rest-js
+      args:
+        APP_MODULE: hive-io-domain-example
+        APP_SOURCE: .
+        NODE_ENV: development
+    image: hive-rest-js
+    environment:
+      ACTOR: PostQueryActor
+      ACTOR_LIB: hive-io-domain-example
+      CLUSTER_SIZE: 1
+      MONGO_URL: "mongodb://mongo:27017/post"
+      FLUENTD_HOST: fluentd
+      FLUENTD_PORT: 24224
+      FLUENTD_TIMEOUT: 3.0
+      FLUENTD_RECONNECT: 600000
+    depends_on:
+      - mongo
+      - fluentd
+    command: npm run dev
+    ports:
+      - 3003:3000
+    volumes:
+      - ../hive-rest-js:/opt/app:rw
+      - /opt/app/node_modules
+      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
+      - ../hive-js:/opt/app/node_modules/hive-io:rw
+    networks:
+      - hive-io
 
 # networking specifics
 networks:
