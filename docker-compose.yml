@@ -2,19 +2,15 @@ version: '3.5'
 services:
   # proxy for layer 7 routing
   hive-io-proxy:
-    build:
-      context: ../hive-io-proxy
-      args:
-        PROXY_ENV: development
+    build: ../hive-io-proxy
     image: hive-io-proxy
     depends_on:
-      - hive-producer-js
       - hive-rest-js
       - hive-stream-processor-js
     ports:
       - 80:80
     volumes:
-      - ../hive-io-proxy/conf/development:/usr/local/etc/haproxy:rw
+      - ../hive-io-proxy:/usr/local/etc/haproxy:rw
     networks:
       - hive-io
     restart: on-failure
