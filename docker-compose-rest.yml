@@ -5,11 +5,14 @@ services:
       context: ../hive-rest-js
       args:
         APP_MODULE: hive-io-rest-example
-        APP_SOURCE: .
-        NODE_ENV: development
-    image: hive-rest-js
+      target: development
+    image: hive-rest-js:development
     environment:
+      ACTOR: PostActor
+      ACTOR_LIB: hive-io-rest-example
       CLUSTER_SIZE: 1
+      HTTP_VERSION: 1
+      SECURE: "false"
       MONGO_URL: "mongodb://mongo:27017/post"
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
@@ -24,23 +27,24 @@ services:
     volumes:
       - ../hive-rest-js:/opt/app:rw
       - /opt/app/node_modules
+      - /opt/app/cert
       - ../hive-js-rest-example:/opt/app/node_modules/hive-io-rest-example:rw
       - ../hive-js:/opt/app/node_modules/hive-io-rest-example/node_modules/hive-io:rw
       - ../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
   fluentd:
-    image: fluent/fluentd:v1.2.1
+    image: fluent/fluentd:v1.7.4-1.0
     networks:
       - hive-io
     restart: on-failure
   mongo:
-    image: mongo:3.6.5
+    image: mongo:4.2.1
     networks:
       - hive-io
     restart: on-failure
   mongo-viewer:
-    image: mongo-express:0.45.0
+    image: mongo-express:0.49.0
     environment:
       ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_SITE_BASEURL: "/mongo/"
