@@ -15,7 +15,7 @@ services:
       - hive-io
     restart: on-failure
   fluentd:
-    image: fluent/fluentd:v1.2.1
+    image: fluent/fluentd:v1.7.4-1.0
     networks:
       - hive-io
     restart: on-failure
@@ -26,13 +26,17 @@ services:
       context: ../hive-producer-js
       args:
         APP_MODULE: hive-io-domain-example
-        APP_SOURCE: .
-        NODE_ENV: development
+      target: development
     image: hive-producer-js
     environment:
+      ACTOR: ViewContentActor
+      ACTOR_LIB: hive-io-domain-example
       CLUSTER_SIZE: 1
-      EVENT_STORE_URL: "kafka:9092"
-      EVENT_STORE_ID: "producer-client"
+      HTTP_VERSION: 1
+      SECURE: "false"
+      EVENT_STORE_TOPIC: view
+      EVENT_STORE_BROKERS: "kafka:29092"
+      EVENT_STORE_ID: producer-client
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
       FLUENTD_TIMEOUT: 3.0
@@ -58,13 +62,17 @@ services:
       context: ../hive-stream-processor-js
       args:
         APP_MODULE: hive-io-domain-example
-        APP_SOURCE: .
-        NODE_ENV: development
+      target: development
     image: hive-stream-processor-js
     environment:
+      ACTOR: PostCommandActor
+      ACTOR_LIB: hive-io-domain-example
       CLUSTER_SIZE: 1
+      HTTP_VERSION: 1
+      SECURE: "false"
       CACHE_URL: "redis://redis:6379"
-      EVENT_STORE_URL: "kafka:9092"
+      EVENT_STORE_PRODUCER_TOPIC: content
+      EVENT_STORE_BROKERS: "kafka:29092"
       EVENT_STORE_ID: stream-processor-client
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
@@ -86,29 +94,34 @@ services:
     networks:
       - hive-io
   redis:
-    image: redis:4.0.9-alpine
+    image: redis:5.0.7-alpine
     networks:
       - hive-io
     restart: on-failure
 
   # log stream containers
   kafka:
-    image: confluentinc/cp-kafka:4.1.1-2
+    image: confluentinc/cp-kafka:5.3.1
     depends_on:
       - zookeeper
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:32181"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_COMPRESSION_TYPE: gzip
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     ports:
-      - 9092:9092
+      - 29092:29092
     networks:
       - hive-io
     restart: on-failure
   zookeeper:
-    image: confluentinc/cp-zookeeper:4.1.1-2
+    image: confluentinc/cp-zookeeper:5.3.1
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 32181
+    ports:
+      - 32181:32181
     networks:
       - hive-io
     restart: on-failure
@@ -119,15 +132,20 @@ services:
       context: ../hive-consumer-js
       args:
         APP_MODULE: hive-io-domain-example
-        APP_SOURCE: .
-        NODE_ENV: development
+      target: development
     image: hive-consumer-js
     environment:
+      ACTOR: PostEventActor
+      ACTOR_LIB: hive-io-domain-example
       CLUSTER_SIZE: 1
+      HTTP_VERSION: 1
+      SECURE: "false"
       MONGO_URL: "mongodb://mongo:27017/post"
-      EVENT_STORE_URL: "kafka:9092"
+      EVENT_STORE_TOPIC: "content|view"
+      EVENT_STORE_BROKERS: "kafka:29092"
       EVENT_STORE_ID: consumer-client
-      EVENT_STORE_OFFSET: earliest
+      EVENT_STORE_GROUP_ID: consumer-group
+      EVENT_STORE_FROM_START: "true"
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
       FLUENTD_TIMEOUT: 3.0
@@ -148,12 +166,12 @@ services:
     networks:
       - hive-io
   mongo:
-    image: mongo:3.6.5
+    image: mongo:4.2.1
     networks:
       - hive-io
     restart: on-failure
-  mongo-express:
-    image: mongo-express:0.45.0
+  mongo-viewer:
+    image: mongo-express:0.49.0
     environment:
       ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_SITE_BASEURL: "/mongo/"
@@ -171,13 +189,14 @@ services:
       context: ../hive-rest-js
       args:
         APP_MODULE: hive-io-domain-example
-        APP_SOURCE: .
-        NODE_ENV: development
+      target: development
     image: hive-rest-js
     environment:
       ACTOR: PostQueryActor
       ACTOR_LIB: hive-io-domain-example
       CLUSTER_SIZE: 1
+      HTTP_VERSION: 1
+      SECURE: "false"
       MONGO_URL: "mongodb://mongo:27017/post"
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
