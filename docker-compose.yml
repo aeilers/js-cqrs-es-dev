@@ -5,7 +5,7 @@ services:
     build: ../hive-io-proxy
     image: hive-io-proxy
     depends_on:
-      - hive-rest-js
+      - hive-base-js
       - hive-stream-processor-js
     ports:
       - 80:80
@@ -184,13 +184,13 @@ services:
     restart: on-failure
 
   # rest services
-  hive-rest-js:
+  hive-base-js:
     build:
-      context: ../hive-rest-js
+      context: ../hive-base-js
       args:
         APP_MODULE: hive-io-domain-example
       target: development
-    image: hive-rest-js
+    image: hive-base-js
     environment:
       ACTOR: PostQueryActor
       ACTOR_LIB: hive-io-domain-example
@@ -209,7 +209,7 @@ services:
     ports:
       - 3003:3000
     volumes:
-      - ../hive-rest-js:/opt/app:rw
+      - ../hive-base-js:/opt/app:rw
       - /opt/app/node_modules
       - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
       - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw

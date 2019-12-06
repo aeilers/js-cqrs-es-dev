@@ -1,12 +1,12 @@
 version: '3.5'
 services:
-  hive-rest-js:
+  hive-base-js:
     build:
-      context: ../hive-rest-js
+      context: ../hive-base-js
       args:
         APP_MODULE: hive-io-rest-example
       target: development
-    image: hive-rest-js:development
+    image: hive-base-js:development
     environment:
       ACTOR: PostActor
       ACTOR_LIB: hive-io-rest-example
@@ -25,7 +25,7 @@ services:
     ports:
       - 80:3000
     volumes:
-      - ../hive-rest-js:/opt/app:rw
+      - ../hive-base-js:/opt/app:rw
       - /opt/app/node_modules
       - /opt/app/cert
       - ../hive-js-rest-example:/opt/app/node_modules/hive-io-rest-example:rw
