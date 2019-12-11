@@ -2,7 +2,7 @@ version: '3.5'
 services:
   # proxy for layer 7 routing
   hive-io-proxy:
-    build: ../hive-io-proxy
+    build: ../../../hive-io-proxy
     image: hive-io-proxy
     depends_on:
       - hive-base-js
@@ -10,7 +10,7 @@ services:
     ports:
       - 80:80
     volumes:
-      - ../hive-io-proxy:/usr/local/etc/haproxy:rw
+      - ../../../hive-io-proxy:/usr/local/etc/haproxy:rw
     networks:
       - hive-io
     restart: on-failure
@@ -23,7 +23,7 @@ services:
   # producers
   hive-producer-js:
     build:
-      context: ../hive-producer-js
+      context: ../../../hive-producer-js
       args:
         APP_MODULE: hive-io-domain-example
       target: development
@@ -48,18 +48,18 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ../hive-producer-js:/opt/app:rw
+      - ../../../hive-producer-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
-      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
-      - ../hive-js:/opt/app/node_modules/hive-io:rw
+      - ../../../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
 
   # stream processors
   hive-stream-processor-js:
     build:
-      context: ../hive-stream-processor-js
+      context: ../../../hive-stream-processor-js
       args:
         APP_MODULE: hive-io-domain-example
       target: development
@@ -86,11 +86,11 @@ services:
     ports:
       - 3001:3000
     volumes:
-      - ../hive-stream-processor-js:/opt/app:rw
+      - ../../../hive-stream-processor-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
-      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
-      - ../hive-js:/opt/app/node_modules/hive-io:rw
+      - ../../../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
   redis:
@@ -129,7 +129,7 @@ services:
   # consumers
   hive-consumer-js:
     build:
-      context: ../hive-consumer-js
+      context: ../../../hive-consumer-js
       args:
         APP_MODULE: hive-io-domain-example
       target: development
@@ -158,11 +158,11 @@ services:
     ports:
       - 3002:3000
     volumes:
-      - ../hive-consumer-js:/opt/app:rw
+      - ../../../hive-consumer-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
-      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
-      - ../hive-js:/opt/app/node_modules/hive-io:rw
+      - ../../../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
   mongo:
@@ -186,7 +186,7 @@ services:
   # rest services
   hive-base-js:
     build:
-      context: ../hive-base-js
+      context: ../../../hive-base-js
       args:
         APP_MODULE: hive-io-domain-example
       target: development
@@ -209,11 +209,11 @@ services:
     ports:
       - 3003:3000
     volumes:
-      - ../hive-base-js:/opt/app:rw
+      - ../../../hive-base-js:/opt/app:rw
       - /opt/app/node_modules
-      - ../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
-      - ../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
-      - ../hive-js:/opt/app/node_modules/hive-io:rw
+      - ../../../hive-js-domain-example:/opt/app/node_modules/hive-io-domain-example:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io-domain-example/node_modules/hive-io:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
 
