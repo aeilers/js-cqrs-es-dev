@@ -111,8 +111,8 @@ services:
       KAFKA_COMPRESSION_TYPE: gzip
       # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    ports:
-      - 29092:29092
+    expose:
+      - 29092
     networks:
       - hive-io
     restart: on-failure
@@ -120,8 +120,8 @@ services:
     image: confluentinc/cp-zookeeper:5.3.1
     environment:
       ZOOKEEPER_CLIENT_PORT: 32181
-    ports:
-      - 32181:32181
+    expose:
+      - 32181
     networks:
       - hive-io
     restart: on-failure
