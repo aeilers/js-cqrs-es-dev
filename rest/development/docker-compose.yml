@@ -2,7 +2,7 @@ version: '3.5'
 services:
   hive-base-js:
     build:
-      context: ../hive-base-js
+      context: ../../../hive-base-js
       args:
         APP_MODULE: hive-io-rest-example
       target: development
@@ -25,12 +25,12 @@ services:
     ports:
       - 80:3000
     volumes:
-      - ../hive-base-js:/opt/app:rw
+      - ../../../hive-base-js:/opt/app:rw
       - /opt/app/node_modules
       - /opt/app/cert
-      - ../hive-js-rest-example:/opt/app/node_modules/hive-io-rest-example:rw
-      - ../hive-js:/opt/app/node_modules/hive-io-rest-example/node_modules/hive-io:rw
-      - ../hive-js:/opt/app/node_modules/hive-io:rw
+      - ../../../hive-js-rest-example:/opt/app/node_modules/hive-io-rest-example:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io-rest-example/node_modules/hive-io:rw
+      - ../../../hive-js:/opt/app/node_modules/hive-io:rw
     networks:
       - hive-io
   fluentd:
