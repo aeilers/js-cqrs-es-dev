@@ -2,13 +2,12 @@ version: '3.5'
 services:
   hive-base-js:
     build: .
-    image: hive-base-js
+    image: hive-base-js:production
     environment:
       ACTOR: PostActor
       ACTOR_LIB: hive-io-rest-example
       CLUSTER_SIZE: 1
-      HTTP_VERSION: 1
-      SECURE: "false"
+      SECURE: "true"
       MONGO_URL: "mongodb://mongo:27017/post"
       FLUENTD_HOST: fluentd
       FLUENTD_PORT: 24224
@@ -18,16 +17,16 @@ services:
       - mongo
       - fluentd
     ports:
-      - 80:3000
+      - 443:3000
     networks:
       - hive-io
   fluentd:
-    image: fluent/fluentd:v1.7.4-1.0
+    image: fluent/fluentd:v1.9.2-1.0
     networks:
       - hive-io
     restart: on-failure
   mongo:
-    image: mongo:4.2.1
+    image: mongo:4.2.3
     networks:
       - hive-io
     restart: on-failure
